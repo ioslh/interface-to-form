@@ -94,6 +94,7 @@ interface FormField {
   label: string
   desc: string
   required: boolean
+  default?: any
 }
 
 const initCode = `
@@ -168,7 +169,7 @@ export default defineComponent({
       })
     }
 
-    const whiteListJsDocTags = ['label', 'desc'] as Array<keyof FormField>
+    const whiteListJsDocTags = ['label', 'desc', 'default'] as Array<keyof FormField>
     const receiveInterface = (statement: ts.InterfaceDeclaration) => {
       const fs: FormField[] = []
       statement.members.forEach(member => {
@@ -220,7 +221,7 @@ export default defineComponent({
       timer.value = setTimeout(() => {
         interfaceToJson(content)
       }, 500)
-    })
+    }, { immediate: true })
 
     onBeforeUnmount(() => {
       editor && editor.dispose()
