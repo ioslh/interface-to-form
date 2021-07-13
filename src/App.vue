@@ -88,13 +88,16 @@ const tsWorkerGetter = (monaco: typeof Monaco): Promise<void> => {
 }
 let editor: Monaco.editor.IStandaloneCodeEditor | null = null
 
+
 interface FormField {
   prop: string
-  type: string | FormField
+  type: string | FormField  // string, number, union
   label: string
-  desc: string
+  desc?: string
   required: boolean
   default?: any
+  enumerable?: boolean
+  enums?: any[]
 }
 
 const initCode = `
@@ -105,8 +108,26 @@ interface Form {
     name: string
     /** @label 年龄 */
     age?: number
+    color: 'red' | 'blue'
+    week: 1 | 2 | 3 | 4
 }
 `
+
+const makeValue = (v: any, type: ts.SyntaxKind) => {
+  switch(type) {
+    case syntaxKind.StringKeyword:
+    case syntaxKind.StringLiteral:
+      return String(v)
+    case syntaxKind.NumberKeyword:
+    case syntaxKind.NumericLiteral:
+      return Number(v)
+    case syntaxKind.BooleanKeyword:
+    case syntaxKind.TrueKeyword:
+    case syntaxKind.FalseKeyword:
+      return Boolean(v)
+  }
+  return v
+}
 
 export default defineComponent({
   setup() {
@@ -161,7 +182,7 @@ export default defineComponent({
         syntaxKind = await tsWorker.getSyntaxKind()
       }
       const sf = await tsWorker!.createSourceFile('form.ts', content, monaco.languages.typescript.ScriptTarget.ESNext)
-      console.log(sf.statements)
+      // console.log(sf.statements)
       sf.statements.forEach(statement => {
         switch(statement.kind) {
           case syntaxKind.InterfaceDeclaration:
@@ -184,16 +205,30 @@ export default defineComponent({
         } else {
           field.required = true
         }
-        switch((anyMember as any).type.kind) {
-          case syntaxKind.StringKeyword:
-            field.type = 'string'
-            break
-          case syntaxKind.NumberKeyword:
-            field.type = 'number'
-            break
-          case syntaxKind.BooleanKeyword:
-            field.type = 'boolean'
-            break
+        if (anyMember.type) {
+          switch(anyMember.type.kind) {
+            case syntaxKind.StringKeyword:
+              field.type = 'string'
+              break
+            case syntaxKind.NumberKeyword:
+              field.type = 'number'
+              break
+            case syntaxKind.BooleanKeyword:
+              field.type = 'boolean'
+              break
+            case syntaxKind.UnionType:
+              field.type = 'union'
+              field.enumerable = true
+              if (anyMember.type && anyMember.type.types) {
+                field.enums = []
+                anyMember.type.types.map((t: any) => {
+                  console.log(t)
+                  if (t.kind === syntaxKind.LiteralType) {
+                    field.enums!.push(makeValue(t.literal.text, t.literal.kind))
+                  }
+                })
+              }
+          }
         }
 
         if (anyMember.jsDoc && anyMember.jsDoc.length) {
@@ -203,7 +238,11 @@ export default defineComponent({
                 if (tag.kind === syntaxKind.JSDocTag) {
                   const name = tag.tagName.escapedText
                   if (whiteListJsDocTags.includes(name)) {
-                    field[name as keyof FormField] = tag.comment
+                    if (name === 'default') {
+                      field[name as keyof FormField] = makeValue(tag.comment, anyMember.type.kind)
+                    } else {
+                      field[name as keyof FormField] = tag.comment
+                    }
                   }
                 }
               })
