@@ -100,8 +100,10 @@ interface FormField {
 const initCode = `
 interface Form {
     /** @label 姓名 */
-    /** @desc good point */
+    /** @desc 物理学家 */
+    /** @default 谢尔顿 */
     name: string
+    /** @label 年龄 */
     age?: number
 }
 `
