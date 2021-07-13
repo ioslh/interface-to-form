@@ -155,6 +155,7 @@ export default defineComponent({
     })
 
     const interfaceToJson = async (content: string) => {
+      await monacoGetter()
       await tsWorkerGetter(monaco)
       if (!syntaxKind) {
         syntaxKind = await tsWorker.getSyntaxKind()
