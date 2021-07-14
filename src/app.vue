@@ -42,7 +42,7 @@ const monacoGetter = () => {
   if (monaco) return Promise.resolve(monaco)
   if (monacoPromise) return monacoPromise
   // const segment = process.env.NODE_ENV === 'development' ? 'dev' : 'min'
-  const segment = 'dev'
+  const segment = 'min'
   monacoLoader.config({
     paths: {
       vs: `/monaco-editor/${segment}/vs`
