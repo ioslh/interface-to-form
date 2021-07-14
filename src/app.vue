@@ -92,17 +92,17 @@ const tsWorkerGetter = (monaco: typeof Monaco): Promise<void> => {
 let editor: Monaco.editor.IStandaloneCodeEditor | null = null
 
 const initCode = `interface Form {
-  /** @label 姓名 */
-  /** @default 张三 */
+  /** @label Your name */
+  /** @default Sheldon Cooper */
   name: string
-  /** @label 年龄 */
-  /** @default 5 */
+  /** @label Your Age */
+  /** @default 28 */
   age: number
-  /** @label 性别 */
-  /** @default female */
-  gender?: "male" | "female"
-  /** @label 是否注册 */
-  /** @desc 一些描述信息 */
+  /** @label Gender */
+  /** @default male */
+  gender?: "female" | "male"
+  /** @label Signed in */
+  /** @desc Some random description */
   /** @default true */
   signed?: boolean
 }`
