@@ -292,6 +292,7 @@ export default defineComponent({
 * {
   margin: 0;
   padding: 0;
+  font-family: "JetBrains Mono-Regular",Menlo,Monaco,Consolas,monospace;
 }
 header, main, div, section {
   box-sizing: border-box;
@@ -302,7 +303,6 @@ header, main, div, section {
 .page {
   height: 100vh;
   width: 100vw;
-  font-family: "JetBrains Mono-Regular",Menlo,Monaco,Consolas,monospace;
 }
 
 .header {
