@@ -31,7 +31,6 @@ type ReturnPromisify<F extends Function> =
             ? (a: A, b: B, c: C, d: D, e: E) => Promise<T>
             : Function
 
-
 let syntaxKind: typeof ts.SyntaxKind
 
 let monaco: typeof Monaco
