@@ -3,7 +3,9 @@
     <header class="header">interface to form</header>
     <main class="main">
       <div class="editor" ref="container"></div>
-      <div class="form"><pre>{{ displayJson }}</pre></div>
+      <div class="right">
+        <ts-form :fields="fields" />
+      </div>
     </main>
   </div>
 </template>
@@ -13,6 +15,8 @@ import { defineComponent, onMounted, ref, onBeforeUnmount, watch, computed } fro
 import monacoLoader from '@monaco-editor/loader'
 import type Monaco from 'monaco-editor'
 import type ts from 'typescript'
+import TsForm from './form.vue'
+import { FormField } from './typings'
 
 type ReturnPromisify<F extends Function> =
   F extends (a: infer A) => infer T
@@ -88,30 +92,21 @@ const tsWorkerGetter = (monaco: typeof Monaco): Promise<void> => {
 }
 let editor: Monaco.editor.IStandaloneCodeEditor | null = null
 
-
-interface FormField {
-  prop: string
-  type: string | FormField  // string, number, union
-  label: string
-  desc?: string
-  required: boolean
-  default?: any
-  enumerable?: boolean
-  enums?: any[]
-}
-
-const initCode = `
-interface Form {
-    /** @label 姓名 */
-    /** @desc 物理学家 */
-    /** @default 谢尔顿 */
-    name: string
-    /** @label 年龄 */
-    age?: number
-    color: 'red' | 'blue'
-    week: 1 | 2 | 3 | 4
-}
-`
+const initCode = `interface Form {
+  /** @label 姓名 */
+  /** @default 张三 */
+  name: string
+  /** @label 年龄 */
+  /** @default 5 */
+  age: number
+  /** @label 性别 */
+  /** @default female */
+  gender?: "male" | "female"
+  /** @label 是否注册 */
+  /** @desc 一些描述信息 */
+  /** @default true */
+  signed?: boolean
+}`
 
 const makeValue = (v: any, type: ts.SyntaxKind) => {
   switch(type) {
@@ -129,7 +124,17 @@ const makeValue = (v: any, type: ts.SyntaxKind) => {
   return v
 }
 
+const normalizeStringLiteral = (v: string): any => {
+  if (v === 'true') return true
+  if (v === 'false') return false
+  if (/^-?\d*(\.\d*)?$/.test(v)) return Number(v)
+  return String(v)
+}
+
 export default defineComponent({
+  components: {
+    TsForm
+  },
   setup() {
     const code = ref(initCode)
     const container = ref<HTMLElement>()
@@ -222,7 +227,6 @@ export default defineComponent({
               if (anyMember.type && anyMember.type.types) {
                 field.enums = []
                 anyMember.type.types.map((t: any) => {
-                  console.log(t)
                   if (t.kind === syntaxKind.LiteralType) {
                     field.enums!.push(makeValue(t.literal.text, t.literal.kind))
                   }
@@ -239,7 +243,15 @@ export default defineComponent({
                   const name = tag.tagName.escapedText
                   if (whiteListJsDocTags.includes(name)) {
                     if (name === 'default') {
-                      field[name as keyof FormField] = makeValue(tag.comment, anyMember.type.kind)
+                      let defaultValue = makeValue(tag.comment, anyMember.type.kind)
+                      if (field.type === 'union') {
+                        defaultValue = normalizeStringLiteral(defaultValue)
+                        if ((field.enums || []).includes(defaultValue)) {
+                          field.default = defaultValue
+                        }
+                      } else {
+                        field.default = defaultValue
+                      }
                     } else {
                       field[name as keyof FormField] = tag.comment
                     }
@@ -254,10 +266,6 @@ export default defineComponent({
       fields.value = fs
     }
 
-    const displayJson = computed(() => {
-      return JSON.stringify(fields.value, null, '  ')
-    })
-
     watch(code, content => {
       clearTimeout(timer.value)
       timer.value = setTimeout(() => {
@@ -270,8 +278,8 @@ export default defineComponent({
     })
 
     return {
+      fields,
       container,
-      displayJson,
     }
   }
 })
@@ -318,8 +326,9 @@ header, main, div, section {
   border-right: 1px solid #eee;
 }
 
-.form {
+.right {
   width: 50%;
   height: 100%;
+  position: relative;
 }
 </style>
