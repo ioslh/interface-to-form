@@ -1,6 +1,9 @@
 <template>
   <div class="page">
-    <header class="header">interface to form</header>
+    <header class="header">
+      <span>interface to form</span>
+      <a href="https://github.com/ioslh/interface-to-form">GitHub</a>
+    </header>
     <main class="main">
       <div class="editor" ref="container"></div>
       <div class="right">
@@ -303,15 +306,21 @@ header, main, div, section {
 .page {
   height: 100vh;
   width: 100vw;
+  background: #fff;
 }
+
 
 .header {
   height: 36px;
   padding: 0 24px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #fafafa;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
   box-shadow: 0 0 5px 5px #fafafa;
+  a {
+    font-size: 12px;
+  }
 }
 
 .main {
