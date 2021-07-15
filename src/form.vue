@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, PropType, ref, watch, h, VNode, computed } from 'vue'
+import { defineComponent, PropType, ref, watch, h, VNode, resolveDirective, withDirectives } from 'vue'
 import { ElInput, ElCheckbox, ElInputNumber, ElButtonGroup, ElButton, ElSelect, ElOption, ElTooltip } from 'element-plus'
 import { FormField } from './typings'
 
@@ -26,7 +26,8 @@ export default defineComponent({
     fields: {
       type: Array as PropType<FormField[]>,
       required: true,
-    }
+    },
+    loading: Boolean,
   },
   emits: [],
   setup(props, { emit }){
@@ -95,24 +96,25 @@ export default defineComponent({
       })
     }
 
+    const loadingDirective = resolveDirective('loading')
+
     return () => {
-      return h('div', { class: 'form' }, {
-        default: () => [
-          h('table', { key: keySeed.value }, h('tbody', null, {
-            default: () => props.fields.map(field => {
-              return h('tr', { class: 'row', key: field.prop }, [
-                h('td', { class: {
-                  label: true,
-                  required: field.required,
-                } }, h('span', field.label || field.prop)),
-                h('td', { class: 'field' }, {
-                  default: () => [renderField(field), renderOptionalTag(field)]
-                }),
-              ])
-            })
-          }))
-        ]
-      })
+      const table = h('table', { key: keySeed.value }, h('tbody', null, {
+        default: () => props.fields.map(field => {
+          return h('tr', { class: 'row', key: field.prop }, [
+            h('td', { class: {
+              label: true,
+              required: field.required,
+            } }, h('span', field.label || field.prop)),
+            h('td', { class: 'field' }, {
+              default: () => [renderField(field), renderOptionalTag(field)]
+            }),
+          ])
+        })
+      }))
+      return withDirectives(h('div', { class: 'form' }, table), [
+        [loadingDirective!, props.loading]
+      ])
     }
   }
 })
@@ -122,6 +124,7 @@ export default defineComponent({
 .form {
   padding-top: 20px;
   width: 100%;
+  height: 100%;
 }
 
 .row {

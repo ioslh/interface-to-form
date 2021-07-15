@@ -7,7 +7,7 @@
     <main class="main">
       <div class="editor" ref="container"></div>
       <div class="right">
-        <ts-form :fields="fields" />
+        <ts-form :fields="fields" :loading="parsing" />
       </div>
     </main>
   </div>
@@ -138,6 +138,7 @@ export default defineComponent({
     TsForm
   },
   setup() {
+    const parsing = ref(true)
     const code = ref(initCode)
     const container = ref<HTMLElement>()
     const timer = ref()
@@ -183,21 +184,25 @@ export default defineComponent({
     })
 
     const interfaceToJson = async (content: string) => {
-      await monacoGetter()
-      await tsWorkerGetter(monaco)
-      if (!syntaxKind) {
-        syntaxKind = await tsWorker.getSyntaxKind()
-      }
-      const sf = await tsWorker!.createSourceFile('form.ts', content, monaco.languages.typescript.ScriptTarget.ESNext)
-      // console.log(sf.statements)
-      sf.statements.forEach(statement => {
-        switch(statement.kind) {
-          case syntaxKind.InterfaceDeclaration:
-            if ((statement as any).name.escapedText === 'Form') {
-              receiveInterface(statement as ts.InterfaceDeclaration)
-            }
+      parsing.value = true
+      try {
+        await monacoGetter()
+        await tsWorkerGetter(monaco)
+        if (!syntaxKind) {
+          syntaxKind = await tsWorker.getSyntaxKind()
         }
-      })
+        const sf = await tsWorker!.createSourceFile('form.ts', content, monaco.languages.typescript.ScriptTarget.ESNext)
+        // console.log(sf.statements)
+        sf.statements.forEach(statement => {
+          switch(statement.kind) {
+            case syntaxKind.InterfaceDeclaration:
+              if ((statement as any).name.escapedText === 'Form') {
+                receiveInterface(statement as ts.InterfaceDeclaration)
+              }
+          }
+        })
+      } catch(e) {}
+      parsing.value = false
     }
 
     const whiteListJsDocTags = ['label', 'desc', 'default'] as Array<keyof FormField>
@@ -281,6 +286,7 @@ export default defineComponent({
 
     return {
       fields,
+      parsing,
       container,
     }
   }
